@@ -75,7 +75,8 @@
     <Compile Include="1-SimpleTests.cs" />
     <Compile Include="2-CustomTypes.cs" />
     <Compile Include="3-Generators.cs" />
-    <Compile Include="4-ModelBased.cs" />
+    <Compile Include="5-ModelBased.cs" />
+    <Compile Include="4-Shrinking.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

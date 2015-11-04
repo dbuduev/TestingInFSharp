@@ -5,13 +5,16 @@ using Xunit;
 
 namespace TestingCSharp
 {
+    // We have a custom type...
     public enum Color
     {
         Red, Green, Blue
     }
 
+    // Here's how we define the Arbitrary instance
     public static class ColorInstances
     {
+        // Public method returning Arbitrary
         public static Arbitrary<Color> ArbitraryColor()
         {
             return Arb.From(ColorGenerator);
@@ -21,11 +24,13 @@ namespace TestingCSharp
             Gen.Elements(Color.Red, Color.Blue);
     }
 
+
+    // Use the instances we have defined, via this attribute:
     [Arbitrary(typeof(ColorInstances))]
     public class Generators
     {
         [Property]
-        public void NoGreensAreGenerated(Color color)
+        public void NoGreensAreGenerated(Color color )
         {
             Assert.NotEqual(Color.Green, color);
         }
@@ -33,19 +38,20 @@ namespace TestingCSharp
 
     public static class GenExamples
     {
-        // Elements(params T[]) -> T:
+        // Elements(params T[]) → Gen<T>:
         public static Gen<char> ABC = Gen.Elements('a', 'b', 'c');
 
-        // Choose(int, int) -> int:
+        // Choose(int, int) → Gen<int>:
         public static Gen<int> FiveToTen = Gen.Choose(5, 10);
         public static Gen<int> TwentyToThirty = Gen.Choose(20, 30);
 
-        // OneOf(params Gen<T>[]) -> T:
+        // OneOf(params Gen<T>[]) → Gen<T>:
         public static Gen<int> Numbers = Gen.OneOf(FiveToTen, TwentyToThirty);
 
-        // ArrayOf(Gen<T>) -> T[]:
-        public static Gen<int[]> FivesToTens = Gen.ArrayOf(FiveToTen);   
+        // ArrayOf(Gen<T>) → Gen<T[]>:
+        public static Gen<int[]> FivesToTens = Gen.ArrayOf(FiveToTen);
 
+        // more: https://fscheck.github.io/FsCheck/TestData.html
 
         // For complex expressions, use the LINQ syntax:
         public static Gen<Tuple<int, int>> Complex =

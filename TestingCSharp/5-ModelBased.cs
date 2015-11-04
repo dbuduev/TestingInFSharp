@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using FsCheck;
 using FsCheck.Xunit;
 using Xunit;
-using Xunit.Sdk;
 
 namespace TestingCSharp
 {
+    public interface IUserHandler
+    {
+        void AddUser(User user);
+
+        User GetUser(string name);
+
+        void DeleteUser(string user);
+    }
     public class User
     {
         public User(string name, int age)
@@ -24,15 +30,42 @@ namespace TestingCSharp
         public override string ToString() => $"Name: '{Name}' Age: {Age}";
     }
 
-
-    public interface IUserHandler
+    class ProductionUserHandler : IUserHandler
     {
-        void AddUser(User user);
+        private readonly Dictionary<string, User> _users = new Dictionary<string, User>();
 
-        User GetUser(string name);
+        public int UserCount => _users.Count;
 
-        void DeleteUser(string user);
+        public void AddUser(User user)
+        {
+            _users[user.Name] = user;
+        }
+
+        public User GetUser(string name)
+        {
+            User result;
+            _users.TryGetValue(name, out result);
+            return result;
+        }
+
+        public void DeleteUser(string user)
+        {
+            if (user.Contains("*")) // catastrophic bug!
+            {
+                _users.Clear();
+            }
+            else
+            {
+                _users.Remove(user);
+            }
+        }
     }
+
+
+
+
+
+
 
 
     public abstract class Operation
@@ -125,7 +158,7 @@ namespace TestingCSharp
         private static Gen<Operation> GenerateOperation =
             Gen.OneOf(
                 Arb.Generate<DeleteOperation>().Select(x => (Operation)x), 
-                Arb.Generate<GetOperation>().Select(x=> (Operation)x),
+                Arb.Generate<GetOperation>().Select(x => (Operation)x),
                 Arb.Generate<AddOperation>().Select(x => (Operation)x));
 
         private static IEnumerable<Operation> ShrinkOperation(Operation operation)
@@ -148,39 +181,8 @@ namespace TestingCSharp
         } 
     }
 
-    class ProductionUserHandler : IUserHandler
-    {
-        private readonly Dictionary<string, User> _users = new Dictionary<string, User>();
 
-        public int UserCount => _users.Count;
-   
-        public void AddUser(User user)
-        {
-            _users[user.Name] = user;
-        }
-
-        public User GetUser(string name)
-        {
-            User result;
-            _users.TryGetValue(name, out result);
-            return result;
-        }
-
-        public void DeleteUser(string user)
-        {
-            if (user.Contains("*")) // catastrophic bug!
-            {
-                _users.Clear();
-            }
-            else
-            {
-                _users.Remove(user);
-            }
-        }
-    }
-
-
-    class UserHandlerModel : IUserHandler
+    class UserCountModel : IUserHandler
     {
         private readonly HashSet<string> _users = new HashSet<string>(); 
 
@@ -220,7 +222,7 @@ namespace TestingCSharp
         public void CheckImplementationAgainstModel(List<Operation> operations)
         {
             var real = new ProductionUserHandler();
-            var model = new UserHandlerModel();
+            var model = new UserCountModel();
 
             ApplyOperations(operations, real);
             ApplyOperations(operations, model);
